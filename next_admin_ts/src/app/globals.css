@@ -6,3 +6,24 @@
   --color-secondary: #9333ea;
   --font-display: "Inter", sans-serif;
 }
+
+/* Base layer: affect HTML tags */
+@layer base {
+  h1 {
+    @apply text-4xl font-bold;
+  }
+}
+
+/* Components layer: reusable styled classes */
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary;
+  }
+}
+
+/* Utilities layer: low-level helpers */
+@layer utilities {
+  .content-auto {
+    content-visibility: auto;
+  }
+}

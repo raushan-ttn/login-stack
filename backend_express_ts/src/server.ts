@@ -1,84 +1,88 @@
-import morgan from 'morgan';
-import path from 'path';
-import helmet from 'helmet';
-import express, { Request, Response, NextFunction } from 'express';
-import logger from 'jet-logger';
+#!/usr/bin/env node
 
-import BaseRouter from '@src/routes';
+import app from "./app";
+import debugLib from "debug";
+import http from "http";
+import dotenv from "dotenv";
 
-import Paths from '@src/common/constants/Paths';
-import ENV from '@src/common/constants/ENV';
-import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
-import { RouteError } from '@src/common/util/route-errors';
-import { NodeEnvs } from '@src/common/constants';
+const debug = debugLib("boot-demo-express-ts:server");
 
+/**
+ * Load environment variables from .env file, where API keys and passwords are configured.
+ */
 
-/******************************************************************************
-                                Setup
-******************************************************************************/
+dotenv.config();
 
-const app = express();
+/**
+ * Get port from environment and store in Express.
+ */
+const port = normalizePort(process.env.PORT || "3000");
+app.set("port", port);
 
+/**
+ * Create HTTP server.
+ */
+const server = http.createServer(app);
 
-// **** Middleware **** //
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+server.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+});
 
-// Basic middleware
-app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+server.on("error", onError);
+server.on("listening", onListening);
 
-// Show routes called in console during development
-if (ENV.NodeEnv === NodeEnvs.Dev) {
-  app.use(morgan('dev'));
+/**
+ * Normalize a port into a number, string, or false.
+ */
+function normalizePort(val: string): number | string | false {
+  const portNumber = parseInt(val, 10);
+
+  if (isNaN(portNumber)) {
+    // Named pipe
+    return val;
+  }
+
+  if (portNumber >= 0) {
+    // Port number
+    return portNumber;
+  }
+
+  return false;
 }
 
-// Security
-if (ENV.NodeEnv === NodeEnvs.Production) {
-  // eslint-disable-next-line n/no-process-env
-  if (!process.env.DISABLE_HELMET) {
-    app.use(helmet());
+/**
+ * Event listener for HTTP server "error" event.
+ */
+function onError(error: NodeJS.ErrnoException): void {
+  if (error.syscall !== "listen") {
+    throw error;
+  }
+
+  const bind = typeof port === "string" ? "Pipe " + port : "Port " + port;
+
+  // Handle specific listen errors with friendly messages
+  switch (error.code) {
+    case "EACCES":
+      console.error(`${bind} requires elevated privileges`);
+      process.exit(1);
+      break;
+    case "EADDRINUSE":
+      console.error(`${bind} is already in use`);
+      process.exit(1);
+      break;
+    default:
+      throw error;
   }
 }
 
-// Add APIs, must be after middleware
-app.use(Paths.Base, BaseRouter);
-
-// Add error handler
-app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
-  if (ENV.NodeEnv !== NodeEnvs.Test.valueOf()) {
-    logger.err(err, true);
-  }
-  let status = HttpStatusCodes.BAD_REQUEST;
-  if (err instanceof RouteError) {
-    status = err.status;
-    res.status(status).json({ error: err.message });
-  }
-  return next(err);
-});
-
-
-// **** FrontEnd Content **** //
-
-// Set views directory (html)
-const viewsDir = path.join(__dirname, 'views');
-app.set('views', viewsDir);
-
-// Set static directory (js and css).
-const staticDir = path.join(__dirname, 'public');
-app.use(express.static(staticDir));
-
-// Nav to users pg by default
-app.get('/', (_: Request, res: Response) => {
-  return res.redirect('/users');
-});
-
-// Redirect to login if not logged in.
-app.get('/users', (_: Request, res: Response) => {
-  return res.sendFile('users.html', { root: viewsDir });
-});
-
-
-/******************************************************************************
-                                Export default
-******************************************************************************/
-
-export default app;
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+function onListening(): void {
+  const addr = server.address();
+  const bind = typeof addr === "string" ? `pipe ${addr}` : `port ${addr?.port}`;
+  debug(`Listening on ${bind}`);
+}
