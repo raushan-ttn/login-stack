@@ -18,7 +18,7 @@ export default function Home() {
             Welcome to Learning Portal!
           </h1>
         </div>
-        <Link href="/" className={styles.link}>
+        <Link href={`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/google`} className={styles.link}>
           <button
             type="button"
             className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg shadow px-7 py-3 font-semibold text-base transition mt-8"
