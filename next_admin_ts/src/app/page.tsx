@@ -19,7 +19,7 @@ export default function Home() {
           </h1>
         </div>
         <Link
-          href={`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/google`}
+          href={`/members`}
           className={styles.link}
         >
           <button
