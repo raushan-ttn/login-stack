@@ -2,11 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  devIndicators: false,
-  sassOptions: {
-    implementation: "sass-embedded",
-  },
-    /* config options here */
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
