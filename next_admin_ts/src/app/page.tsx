@@ -1,6 +1,6 @@
-import Image from "next/image";
-import Link from "next/link";
-import styles from "./Home.module.scss";
+import Image from 'next/image';
+import Link from 'next/link';
+import styles from './Home.module.scss';
 
 export default function Home() {
   return (
@@ -18,11 +18,14 @@ export default function Home() {
             Welcome to Learning Portal!
           </h1>
         </div>
-        <Link href="/" className={styles.link}>
+        <Link
+          href={`/members`}
+          className={styles.link}
+        >
           <button
             type="button"
             className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg shadow px-7 py-3 font-semibold text-base transition mt-8"
-            style={{ boxShadow: "0 8px 40px 0 #a21caf33" }} // optional for extra shadow
+            style={{ boxShadow: '0 8px 40px 0 #a21caf33' }} // optional for extra shadow
           >
             <Image
               alt="Google Icon"
