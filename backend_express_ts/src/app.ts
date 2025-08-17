@@ -1,8 +1,11 @@
 import express, { Application } from 'express';
 import googleRouter from './routes/googleAuth';
+import basicAuthRouter from './routes/basicAuth';
+import userRouter from './routes/userRoute';
 import passport from 'passport';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 
 import { BACKEND_CONFIG } from './utils/constant';
 import { setupSwagger } from './swagger';
@@ -16,8 +19,22 @@ setupSwagger(app);
 // Constants
 const apiPrefix = BACKEND_CONFIG.GLOBAL.API_PREFIX;
 
+// Enable trust proxy if your app is behind a reverse proxy (like Nginx)
+// This allows req.ip to hold the real client IP forwarded by the proxy
+app.set('trust proxy', true);
+
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Allow all origins
+app.use(cors());
+
+// app.use(cors({
+//   origin: ['http://localhost:3000', 'https://yourdomain.com'], // allowed origins
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'], // allowed HTTP methods
+//   allowedHeaders: ['Content-Type', 'Authorization'], // allowed headers
+//   credentials: true // allow cookies/auth headers
+// }));
 
 // Middleware
 app.use(express.json());
@@ -39,7 +56,11 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session()); // Incase of JWT-Based Authentication this is not required.
 
-// Routes
+// Public Routes
 app.use(`${apiPrefix}/auth/google`, googleRouter);
+app.use(`${apiPrefix}/auth/basic`, basicAuthRouter);
+
+//Private routes
+app.use(`${apiPrefix}/user-info`, userRouter);
 
 export default app;

@@ -1,15 +1,49 @@
-"use client";
-import Checkbox from "@/components/form/input/Checkbox";
-import Input from "@/components/form/input/InputField";
-import Label from "@/components/form/Label";
-import Button from "@/components/ui/button/Button";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
-import Link from "next/link";
-import React, { useState } from "react";
+'use client';
+import Checkbox from '@/components/form/input/Checkbox';
+import Input from '@/components/form/input/InputField';
+import Label from '@/components/form/Label';
+import Button from '@/components/ui/button/Button';
+import { useForm, Controller } from 'react-hook-form';
+import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from '@/icons';
+import Link from 'next/link';
+import React, { useState } from 'react';
+import { loginAuthAction } from '@/actions/authActions';
+import { redirect } from 'next/navigation';
+import Alert from '../ui/alert/Alert';
 
+export type LoginFormValues = {
+  email: string;
+  password: string;
+  agree: boolean;
+  keep_me: boolean;
+};
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+    setError, // ✅ from useForm
+  } = useForm<LoginFormValues>();
+
+  /**
+   *
+   * @param data
+   */
+  const onSubmit = async (data: LoginFormValues) => {
+    // call server action to manage login.
+    const res = await loginAuthAction(data);
+    if (res && Object.keys(res).length > 0) {
+      redirect('/members');
+    } else {
+      // want to set login error on form
+      setError('root', {
+        type: 'manual',
+        message: 'Invalid email or password.',
+      });
+    }
+    console.log(res);
+  };
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
       <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
@@ -33,7 +67,10 @@ export default function SignInForm() {
           </div>
           <div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
-              <button className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
+              <Link
+                href={`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/google`}
+                className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
+              >
                 <svg
                   width="20"
                   height="20"
@@ -59,7 +96,7 @@ export default function SignInForm() {
                   />
                 </svg>
                 Sign in with Google
-              </button>
+              </Link>
               <button className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
                 <svg
                   width="21"
@@ -84,22 +121,52 @@ export default function SignInForm() {
                 </span>
               </div>
             </div>
-            <form>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-6">
+                {errors.root && (
+                  <Alert
+                    title="Login failed."
+                    variant="error"
+                    message={errors?.root?.message ?? ''}
+                  />
+                )}
                 <div>
                   <Label>
-                    Email <span className="text-error-500">*</span>{" "}
+                    Email <span className="text-error-500">*</span>{' '}
                   </Label>
-                  <Input placeholder="info@gmail.com" type="email" />
+                  <Controller
+                    name="email"
+                    control={control}
+                    rules={{ required: 'Email is required.' }}
+                    render={({ field }) => (
+                      <Input
+                        {...field} // gives value + onChange
+                        type="email"
+                        placeholder="info@gmail.com"
+                        error={!!errors.email}
+                        hint={errors.email?.message}
+                      />
+                    )}
+                  />
                 </div>
                 <div>
                   <Label>
-                    Password <span className="text-error-500">*</span>{" "}
+                    Password <span className="text-error-500">*</span>{' '}
                   </Label>
                   <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
+                    <Controller
+                      name="password"
+                      control={control}
+                      rules={{ required: 'password is required.' }}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Enter your password"
+                          error={!!errors.password}
+                          hint={errors.password?.message}
+                        />
+                      )}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -115,10 +182,18 @@ export default function SignInForm() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Checkbox checked={isChecked} onChange={setIsChecked} />
-                    <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
-                      Keep me logged in
-                    </span>
+                    <Controller
+                      name="keep_me"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          label="Keep me logged in"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400"
+                        />
+                      )}
+                    />
                   </div>
                   <Link
                     href="/reset-password"
@@ -127,8 +202,13 @@ export default function SignInForm() {
                     Forgot password?
                   </Link>
                 </div>
+                {errors.keep_me && (
+                  <p className="text-red-500 text-sm">
+                    {errors.keep_me.message}
+                  </p>
+                )}
                 <div>
-                  <Button className="w-full" size="sm">
+                  <Button type="submit" className="w-full" size="sm">
                     Sign in
                   </Button>
                 </div>
@@ -137,7 +217,7 @@ export default function SignInForm() {
 
             <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-                Don&apos;t have an account? {""}
+                Don&apos;t have an account? {''}
                 <Link
                   href="/signup"
                   className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
